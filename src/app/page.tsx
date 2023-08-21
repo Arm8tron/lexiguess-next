@@ -1,113 +1,232 @@
-import Image from 'next/image'
+"use client"
+
+import React, { useEffect, useState, useRef } from 'react';
+import { generate } from 'random-words';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Slider from '@mui/material/Slider'
+import InputBox from '../components/InputBox';
+import Keyboard from '../components/Keyboard';
+
+/*	
+	Feedback
+	0 - Not present
+	1 - present but not correct location
+	2 - present and correct location
+*/
+
+const alphabeticRegex: RegExp = /^[A-Za-z]+$/;
+const numberOfAttempts: number = 5;
+
+type CompletedUserWordType = {
+    letter: string,
+    feedback: number
+}
 
 export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+	const regenBtnRef = useRef<HTMLButtonElement | null>(null);
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+	const [wordLength, setWordLength] = useState<number>(5);
+	const [generatedWord, setGeneratedWord] = useState<string>('');
+	const [activeUserWord, setActiveUserWord] = useState<string>('');
+	const [completedUserWords, setCompletedUserWords] = useState<CompletedUserWordType[][]>([]);
+	const [activeRow, setActiveRow] = useState<number>(0);
+	const [showAnswer, setShowAnswer] = useState<boolean>(false);
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+	useEffect(() => {
+		generateNewWord();
+		try {
+			// fetch('http://localhost:3000/daily-word')
+			// .then(res => res.json())
+			// .then(response => {
+			// 	if(response.success) {
+			// 		const dailyWord = response.dailyWord;
+			// 		setGeneratedWord(dailyWord);
+			// 		setWordLength(dailyWord.length);
+			// 	}
+			// })
+		} catch(e) {
+			showErrorToast("Failed to fetch daily word");
+		}
+	}, [wordLength]);
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+	useEffect(() => {
+		window.onkeydown = (event) => {
+			const key = event.key.toLowerCase();
+			handleKey(key);
+		};
+	}, [activeUserWord]);
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
+	function generateNewWord() {
+		//location.reload();
+		console.log("Generating new word");
+		const newWord: any = generate({ minLength: wordLength, maxLength: wordLength });
+		console.log(newWord);
+		setGeneratedWord(newWord);
+		setActiveUserWord('');
+		setCompletedUserWords([]);
+		setActiveRow(0);
+		setShowAnswer(false);
+		regenBtnRef.current?.blur();
+	}
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+	function handleKey(key : string) {
+		if (alphabeticRegex.test(key) && key.length == 1 && activeUserWord.length < wordLength) {
+			setActiveUserWord(prevWord => prevWord += key);
+		} else if (key == "backspace") {
+			setActiveUserWord(prevWord => prevWord.slice(0, -1));
+		} else if (key == "enter") {
+			validateUserWord();
+		}
+	}
+
+
+	async function validateUserWord() {
+		if (!activeUserWord || activeUserWord.length < wordLength) return;
+
+		let resultArray: CompletedUserWordType[] = [];
+		let correctCount: number = 0;
+		let wrongCount: number = 0;
+
+		console.log(`Validating ${activeUserWord}`);
+		//const isValid = await isValidEnglishWord(activeUserWord);
+
+
+		if (false) { //FIXME: check
+			showErrorToast("Word doesn't exist");
+			setActiveRow(prevRow => prevRow + 1);
+			for (let char of activeUserWord) {
+				resultArray.push({ letter: char, feedback: 0 });
+			}
+			if (activeRow == numberOfAttempts - 1) {
+				showErrorToast("No more attempts left");
+				setShowAnswer(true);
+			}
+			setCompletedUserWords(prevState => [...prevState, resultArray]);
+			setActiveUserWord("");
+			return;
+		}
+
+		for (let i = 0; i < wordLength; i++) {
+			if (generatedWord.includes(activeUserWord[i])) {
+				if (activeUserWord[i] == generatedWord[i]) {
+					resultArray.push({ letter: activeUserWord[i], feedback: 2 });
+					correctCount++;
+				} else {
+					resultArray.push({ letter: activeUserWord[i], feedback: 1 });
+				}
+			} else {
+				wrongCount++;
+				resultArray.push({ letter: activeUserWord[i], feedback: 0 });
+			}
+		}
+
+		if (wrongCount == wordLength) {
+			showErrorToast("No matching characters");
+		}
+
+		if (correctCount == wordLength) {
+			showSuccessToast("You got it right!");
+		} else {
+			if (activeRow == numberOfAttempts - 1) {
+				showErrorToast("No more attempts left");
+				setShowAnswer(true);
+			} else {
+				setActiveRow(prevRow => prevRow + 1);
+			}
+		}
+
+		setCompletedUserWords(prevState => [...prevState, resultArray]);
+		setActiveUserWord("");
+	}
+
+	async function isValidEnglishWord(word: string) {
+		return fetch(`https://api.datamuse.com/words?sp=${word}&max=1`)
+			.then(res => res.json())
+			.then(response => {
+				if (response.length > 0 && response[0].word == word) {
+					if (word == "aeiou") {
+						return false;
+					} else {
+						return true;
+					}
+				} else {
+					return false;
+				}
+			}).catch(err => {
+				console.log(err);
+				return false;
+			})
+	}
+
+	function showSuccessToast(message: string) {
+		toast.success(message);
+	}
+
+	function showErrorToast(message: string) {
+		toast.error(message);
+	}
+
+	function handleChangeWordLength(event: any) {
+		setWordLength(event.target.value);
+	}
+
+
+
+	return (
+		<div className='w-full h-full flex items-center justify-center flex-col gap-y-6'>
+			<header className='fixed top-0 left-0 border-b border-slate-700 w-full flex items-center justify-center bg-primary-bg z-10 h-[60px]'>
+				<h1 className=' text-[32px] font-extrabold select-none'>LexiGuess</h1>
+			</header>
+			<main className='mt-20 flex flex-col items-center justify-center gap-y-6'>
+				<div className='w-[80vw] sm:w-[20vw] flex flex-col items-center justify-center'>
+					<p>Word length</p>
+					<Slider
+						aria-label="Word length"
+						defaultValue={5}
+						valueLabelDisplay="auto"
+						step={1}
+						marks
+						min={4}
+						max={10}
+						color='primary'
+						onChange={handleChangeWordLength}
+					/>
+				</div>
+				{Array.from({ length: numberOfAttempts }, (_, index) => index).map((row, rowIndex) => (
+					<div id={`Row ${row}`} className='flex flex-row gap-x-4' key={`row-${rowIndex}`}>
+						{Array.from({ length: wordLength }, (_, index) => index).map((column, columnIndex) => (
+							<InputBox
+								key={`input-${rowIndex}-${columnIndex}`}
+								row={row}
+								column={column}
+								completedUserWords={completedUserWords}
+								activeUserWord={activeUserWord}
+								activeRow={activeRow}
+							/>
+						))}
+					</div>
+				))}
+				{
+					showAnswer && <p className=' text-[18px] font-medium'>Correct word is <strong>{generatedWord}</strong></p>
+				}
+				<button ref={regenBtnRef} onClick={generateNewWord} className=' px-4 py-2 bg-slate-800 hover:opacity-80 rounded-lg'>
+					Regenerate
+				</button>
+				<div className='flex flex-row gap-x-4'>
+					<button onClick={() => handleKey("enter")} className=' w-24 h-10 bg-slate-800 hover:opacity-80 rounded-lg'>
+						Enter
+					</button>
+					<button onClick={() => handleKey("backspace")} className=' w-24 h-10 bg-slate-800 hover:opacity-80 rounded-lg'>
+						Backspace
+					</button>
+				</div>
+				<Keyboard onKeyClick={handleKey} />
+				<ToastContainer
+					position='bottom-left'
+				/>
+			</main>
+
+		</div>
+	)
 }
