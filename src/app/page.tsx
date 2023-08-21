@@ -61,7 +61,6 @@ export default function Home() {
 		//location.reload();
 		console.log("Generating new word");
 		const newWord: any = generate({ minLength: wordLength, maxLength: wordLength });
-		console.log(newWord);
 		setGeneratedWord(newWord);
 		setActiveUserWord('');
 		setCompletedUserWords([]);
