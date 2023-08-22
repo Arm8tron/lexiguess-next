@@ -27,8 +27,8 @@ import Box from '@mui/material/Box';
 const alphabeticRegex: RegExp = /^[A-Za-z]+$/;
 
 type CompletedUserWordType = {
-    letter: string,
-    feedback: number
+	letter: string,
+	feedback: number
 }
 
 const style = {
@@ -46,7 +46,7 @@ const style = {
 	flexDirection: "column",
 	justifyContent: "center",
 	alignItems: "center"
-  };
+};
 
 export default function Home() {
 	const regenBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -62,7 +62,7 @@ export default function Home() {
 	const [isSettingsModalVisible, setSettingsModalVisibility] = useState<boolean>(false);
 
 	useEffect(() => {
-		if(wordType) {
+		if (wordType) {
 			setDailyWord();
 		} else {
 			generateNewWord();
@@ -114,7 +114,7 @@ export default function Home() {
 		regenBtnRef.current?.blur();
 	}
 
-	function handleKey(key : string) {
+	function handleKey(key: string) {
 		if (alphabeticRegex.test(key) && key.length == 1 && activeUserWord.length < wordLength) {
 			setActiveUserWord(prevWord => prevWord += key);
 		} else if (key == "backspace") {
@@ -226,20 +226,35 @@ export default function Home() {
 
 	return (
 		<div className='w-full h-full flex items-center justify-center flex-col gap-y-6'>
-			<header className='fixed top-0 left-0 border-b border-slate-700 w-full flex items-center justify-between px-5 bg-primary-bg z-10 h-[60px]'>
-				<div>
-					<button onClick={() => setWordType(1)} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
-						Try out the daily word!
-					</button>
-					
+			<header className='fixed top-0 left-0 border-b border-slate-700 w-full px-5 bg-primary-bg z-10 h-[75px] sm:h-[60px]'>
+				<div className='flex items-center justify-center sm:justify-between h-1/3 sm:h-full'>
+					<div className='w-1/3 sm:flex justify-start items-center hidden'>
+						<button onClick={() => setWordType(1)} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+							Try daily word
+						</button>
+					</div>
+					<div className='flex flex-row gap-2 w-1/3 justify-center items-center'>
+						<h1 className='text-[32px] font-extrabold select-none'>LexiGuess</h1>
+						<p style={{ display: wordType == 1 ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Daily</p>
+					</div>
+					<div className='w-1/3 hidden sm:flex justify-end items-center'>
+						<button style={{ display: wordType != 1 ? "flex" : "none" }} onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+							<SettingsIcon />
+						</button>
+					</div>
 				</div>
-				<div className='flex flex-row gap-2 absolute left-[45vw]'>
-					<h1 className='text-[32px] font-extrabold select-none'>LexiGuess</h1>
-					<p style={{ display: wordType == 1 ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Daily</p>
+				<div className='flex sm:hidden items-center justify-around h-1/3 my-4'>
+					<div className='w-1/3 flex justify-start items-center'>
+						<button onClick={() => setWordType(1)} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+							Try daily word
+						</button>
+					</div>
+					<div className='w-1/3 flex justify-end items-center'>
+						<button style={{ display: wordType != 1 ? "flex" : "none" }} onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+							<SettingsIcon />
+						</button>
+					</div>
 				</div>
-				<button style={{ display: wordType != 1 ? "flex" : "none" }} onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
-					<SettingsIcon/>
-				</button>
 			</header>
 			<main className='mt-20 flex flex-col items-center justify-center gap-y-6'>
 				{Array.from({ length: numberOfAttempts }, (_, index) => index).map((row, rowIndex) => (
