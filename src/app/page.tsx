@@ -7,7 +7,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import Slider from '@mui/material/Slider'
 import InputBox from '../components/InputBox';
 import Keyboard from '../components/Keyboard';
-
+import SettingsIcon from '@mui/icons-material/Settings';
+import Modal from '@mui/material/Modal';
+import Box from '@mui/material/Box';
 /*	
 	Feedback
 	0 - Not present
@@ -15,40 +17,57 @@ import Keyboard from '../components/Keyboard';
 	2 - present and correct location
 */
 
+/*
+	Type
+	0 - Normal
+	1 - Daily 
+
+*/
+
 const alphabeticRegex: RegExp = /^[A-Za-z]+$/;
-const numberOfAttempts: number = 5;
 
 type CompletedUserWordType = {
     letter: string,
     feedback: number
 }
 
+const style = {
+	position: 'absolute' as 'absolute',
+	top: '50%',
+	left: '50%',
+	transform: 'translate(-50%, -50%)',
+	width: 400,
+	bgcolor: '#141414',
+	border: '2px solid #000',
+	boxShadow: 24,
+	p: 4,
+	borderRadius: 10,
+	display: "flex",
+	flexDirection: "column",
+	justifyContent: "center",
+	alignItems: "center"
+  };
+
 export default function Home() {
 	const regenBtnRef = useRef<HTMLButtonElement | null>(null);
 
+	const [wordType, setWordType] = useState<number>(0);
 	const [wordLength, setWordLength] = useState<number>(5);
+	const [numberOfAttempts, setNumberOfAttempts] = useState<number>(6);
 	const [generatedWord, setGeneratedWord] = useState<string>('');
 	const [activeUserWord, setActiveUserWord] = useState<string>('');
 	const [completedUserWords, setCompletedUserWords] = useState<CompletedUserWordType[][]>([]);
 	const [activeRow, setActiveRow] = useState<number>(0);
 	const [showAnswer, setShowAnswer] = useState<boolean>(false);
+	const [isSettingsModalVisible, setSettingsModalVisibility] = useState<boolean>(false);
 
 	useEffect(() => {
-		generateNewWord();
-		try {
-			// fetch('http://localhost:3000/daily-word')
-			// .then(res => res.json())
-			// .then(response => {
-			// 	if(response.success) {
-			// 		const dailyWord = response.dailyWord;
-			// 		setGeneratedWord(dailyWord);
-			// 		setWordLength(dailyWord.length);
-			// 	}
-			// })
-		} catch(e) {
-			showErrorToast("Failed to fetch daily word");
+		if(wordType) {
+			setDailyWord();
+		} else {
+			generateNewWord();
 		}
-	}, [wordLength]);
+	}, [wordLength, wordType]);
 
 	useEffect(() => {
 		window.onkeydown = (event) => {
@@ -57,15 +76,41 @@ export default function Home() {
 		};
 	}, [activeUserWord]);
 
+	function setDailyWord() {
+		try {
+			fetch(`/api/daily-word`)
+				.then(res => res.json())
+				.then(response => {
+					if (response.word) {
+						console.log("got daily word");
+						setGeneratedWord(response.word);
+						setWordLength(response.word.length);
+						setNumberOfAttempts(6);
+						setActiveUserWord('');
+						setCompletedUserWords([]);
+						setActiveRow(0);
+						setShowAnswer(false);
+					} else {
+						throw "Word not found";
+					}
+				}).catch(err => {
+					throw err;
+				})
+		} catch (error: any) {
+			showErrorToast(error.toString());
+		}
+	}
+
 	function generateNewWord() {
-		//location.reload();
 		console.log("Generating new word");
 		const newWord: any = generate({ minLength: wordLength, maxLength: wordLength });
 		setGeneratedWord(newWord);
+		setWordLength(newWord.length);
 		setActiveUserWord('');
 		setCompletedUserWords([]);
 		setActiveRow(0);
 		setShowAnswer(false);
+		setWordType(0);
 		regenBtnRef.current?.blur();
 	}
 
@@ -170,28 +215,33 @@ export default function Home() {
 		setWordLength(event.target.value);
 	}
 
+	function handleChangeNumberOfAttempts(event: any) {
+		setNumberOfAttempts(event.target.value);
+	}
+
+	function toggleSettingsOverlay() {
+		setSettingsModalVisibility(prevState => !prevState);
+	}
 
 
 	return (
 		<div className='w-full h-full flex items-center justify-center flex-col gap-y-6'>
-			<header className='fixed top-0 left-0 border-b border-slate-700 w-full flex items-center justify-center bg-primary-bg z-10 h-[60px]'>
-				<h1 className=' text-[32px] font-extrabold select-none'>LexiGuess</h1>
+			<header className='fixed top-0 left-0 border-b border-slate-700 w-full flex items-center justify-between px-5 bg-primary-bg z-10 h-[60px]'>
+				<div>
+					<button onClick={() => setWordType(1)} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+						Try out the daily word!
+					</button>
+					
+				</div>
+				<div className='flex flex-row gap-2 absolute left-[45vw]'>
+					<h1 className='text-[32px] font-extrabold select-none'>LexiGuess</h1>
+					<p style={{ display: wordType == 1 ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Daily</p>
+				</div>
+				<button style={{ display: wordType != 1 ? "flex" : "none" }} onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+					<SettingsIcon/>
+				</button>
 			</header>
 			<main className='mt-20 flex flex-col items-center justify-center gap-y-6'>
-				<div className='w-[80vw] sm:w-[20vw] flex flex-col items-center justify-center'>
-					<p>Word length</p>
-					<Slider
-						aria-label="Word length"
-						defaultValue={5}
-						valueLabelDisplay="auto"
-						step={1}
-						marks
-						min={4}
-						max={10}
-						color='primary'
-						onChange={handleChangeWordLength}
-					/>
-				</div>
 				{Array.from({ length: numberOfAttempts }, (_, index) => index).map((row, rowIndex) => (
 					<div id={`Row ${row}`} className='flex flex-row gap-x-4' key={`row-${rowIndex}`}>
 						{Array.from({ length: wordLength }, (_, index) => index).map((column, columnIndex) => (
@@ -209,7 +259,7 @@ export default function Home() {
 				{
 					showAnswer && <p className=' text-[18px] font-medium'>Correct word is <strong>{generatedWord}</strong></p>
 				}
-				<button ref={regenBtnRef} onClick={generateNewWord} className=' px-4 py-2 bg-slate-800 hover:opacity-80 rounded-lg'>
+				<button ref={regenBtnRef} style={{ display: wordType != 1 ? "flex" : "none" }} onClick={generateNewWord} className=' px-4 py-2 bg-slate-800 hover:opacity-80 rounded-lg'>
 					Regenerate
 				</button>
 				<div className='flex flex-row gap-x-4'>
@@ -225,7 +275,42 @@ export default function Home() {
 					position='bottom-left'
 				/>
 			</main>
-
+			<Modal
+				onClose={toggleSettingsOverlay}
+				open={isSettingsModalVisible}>
+				<Box sx={style}>
+					<div className='flex flex-col w-full justify-center items-center gap-1'>
+						<p>Word length</p>
+						<Slider
+							value={wordLength}
+							aria-label="Word length"
+							defaultValue={5}
+							valueLabelDisplay="auto"
+							step={1}
+							marks
+							min={4}
+							max={10}
+							color='primary'
+							onChange={handleChangeWordLength}
+						/>
+					</div>
+					<div className='flex flex-col w-full justify-center items-center gap-1 mt-20'>
+						<p>Number of attempts</p>
+						<Slider
+							value={numberOfAttempts}
+							aria-label="Number of attempts"
+							defaultValue={6}
+							valueLabelDisplay="auto"
+							step={1}
+							marks
+							min={4}
+							max={10}
+							color='primary'
+							onChange={handleChangeNumberOfAttempts}
+						/>
+					</div>
+				</Box>
+			</Modal>
 		</div>
 	)
 }
