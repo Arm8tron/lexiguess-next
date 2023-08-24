@@ -10,6 +10,7 @@ import Keyboard from '../components/Keyboard';
 import SettingsIcon from '@mui/icons-material/Settings';
 import Modal from '@mui/material/Modal';
 import Box from '@mui/material/Box';
+import { generateHardWord } from '../../hard-word-gen';
 /*	
 	Feedback
 	0 - Not present
@@ -21,6 +22,7 @@ import Box from '@mui/material/Box';
 	Type
 	0 - Normal
 	1 - Daily 
+    2 - Hard
 
 */
 
@@ -59,13 +61,12 @@ export default function Home() {
 	const [completedUserWords, setCompletedUserWords] = useState<CompletedUserWordType[][]>([]);
 	const [activeRow, setActiveRow] = useState<number>(0);
 	const [showAnswer, setShowAnswer] = useState<boolean>(false);
+	const [wordMeaning, setWordMeaning] = useState<string>('');
 	const [isSettingsModalVisible, setSettingsModalVisibility] = useState<boolean>(false);
 
 	useEffect(() => {
-		if (wordType) {
-			getDailyWord();
-		} else {
-			generateNewWord();
+		if(wordType == 0) {
+			generateNormalWord();
 		}
 	}, [wordLength]);
 
@@ -102,8 +103,16 @@ export default function Home() {
 		}
 	}
 
-	function generateNewWord() {
-		console.log("Generating new word");
+	function regenerateWord() {
+		if(wordType == 2) {
+			generateHardWord();
+		} else {
+			generateNormalWord();
+		}
+	}
+
+	function generateNormalWord() {
+		console.log("Generating normal word");
 		const newWord: any = generate({ minLength: wordLength, maxLength: wordLength });
 		setGeneratedWord(newWord);
 		setWordLength(newWord.length);
@@ -113,6 +122,33 @@ export default function Home() {
 		setShowAnswer(false);
 		setWordType(0);
 		regenBtnRef.current?.blur();
+	}
+
+	function getHardWord() {
+		console.log("Generating hard word");
+		const newWord : string = generateHardWord();
+		setGeneratedWord(newWord);
+		setWordLength(newWord.length);
+		setActiveUserWord('');
+		setCompletedUserWords([]);
+		setActiveRow(0);
+		setShowAnswer(false);
+		setWordType(2);
+		setSettingsModalVisibility(false);
+		getWordMeaning(newWord);
+	}
+
+	function getWordMeaning(newWord: string) {
+		try {
+			fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${newWord}`)
+				.then(res => res.json())
+				.then(response => {
+					const meaning = response[0].meanings[0].definitions[0].definition;
+					setWordMeaning(meaning);
+				})
+		} catch (error) {
+			console.log(error);
+		}
 	}
 
 	function handleKey(key: string) {
@@ -224,7 +260,6 @@ export default function Home() {
 		setSettingsModalVisibility(prevState => !prevState);
 	}
 
-
 	return (
 		<div className='w-full h-full flex items-center justify-center flex-col gap-y-6'>
 			<header className='fixed top-0 left-0 border-b border-slate-700 w-full px-5 bg-primary-bg z-10 h-[75px] sm:h-[60px]'>
@@ -237,6 +272,7 @@ export default function Home() {
 					<div className='flex flex-row gap-2 w-1/3 justify-center items-center'>
 						<h1 className='text-[32px] font-extrabold select-none'>LexiGuess</h1>
 						<p style={{ display: wordType == 1 ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Daily</p>
+						<p style={{ display: wordType == 2 ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Hard</p>
 					</div>
 					<div className='w-1/3 hidden sm:flex justify-end items-center'>
 						<button style={{ display: wordType != 1 ? "flex" : "none" }} onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
@@ -246,7 +282,7 @@ export default function Home() {
 				</div>
 				<div className='flex sm:hidden items-center justify-around h-1/3 my-4'>
 					<div className='w-1/3 flex justify-start items-center'>
-						<button onClick={() => setWordType(1)} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+						<button onClick={getDailyWord} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
 							Try daily word
 						</button>
 					</div>
@@ -275,7 +311,15 @@ export default function Home() {
 				{
 					showAnswer && <p className=' text-[18px] font-medium'>Correct word is <strong>{generatedWord}</strong></p>
 				}
-				<button ref={regenBtnRef} style={{ display: wordType != 1 ? "flex" : "none" }} onClick={generateNewWord} className=' px-4 py-2 bg-slate-800 hover:opacity-80 rounded-lg'>
+				{
+					showAnswer && wordMeaning.length > 0 && (
+						<div className='flex flex-col gap-1 w-full sm:w-1/2'>
+							<p className='text-[12px] text-center'>Meaning : {wordMeaning}</p>
+							<p className='text-[14px] text-center'>Learn more about the word <a href={`https://www.dictionary.com/browse/${generatedWord}`} target='_blank' className='font-bold text-blue-400 underline'>here</a></p>
+						</div>
+					)
+				}
+				<button ref={regenBtnRef} style={{ display: wordType != 1 ? "flex" : "none" }} onClick={regenerateWord} className=' px-4 py-2 bg-slate-800 hover:opacity-80 rounded-lg'>
 					Regenerate
 				</button>
 				<div className='flex flex-row gap-x-4'>
@@ -295,6 +339,9 @@ export default function Home() {
 				onClose={toggleSettingsOverlay}
 				open={isSettingsModalVisible}>
 				<Box sx={style}>
+					<button onClick={getHardWord} className='hover:bg-slate-800 rounded-lg p-2 duration-200 my-4'>
+						Hard mode (Words are hard to guess)
+					</button>
 					<div className='flex flex-col w-full justify-center items-center gap-1'>
 						<p>Word length</p>
 						<Slider
