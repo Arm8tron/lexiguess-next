@@ -63,11 +63,11 @@ export default function Home() {
 
 	useEffect(() => {
 		if (wordType) {
-			setDailyWord();
+			getDailyWord();
 		} else {
 			generateNewWord();
 		}
-	}, [wordLength, wordType]);
+	}, [wordLength]);
 
 	useEffect(() => {
 		window.onkeydown = (event) => {
@@ -76,7 +76,7 @@ export default function Home() {
 		};
 	}, [activeUserWord]);
 
-	function setDailyWord() {
+	function getDailyWord() {
 		try {
 			fetch(`/api/daily-word`)
 				.then(res => res.json())
@@ -90,6 +90,7 @@ export default function Home() {
 						setCompletedUserWords([]);
 						setActiveRow(0);
 						setShowAnswer(false);
+                        setWordType(1);
 					} else {
 						throw "Word not found";
 					}
@@ -229,7 +230,7 @@ export default function Home() {
 			<header className='fixed top-0 left-0 border-b border-slate-700 w-full px-5 bg-primary-bg z-10 h-[75px] sm:h-[60px]'>
 				<div className='flex items-center justify-center sm:justify-between h-1/3 sm:h-full'>
 					<div className='w-1/3 sm:flex justify-start items-center hidden'>
-						<button onClick={() => setWordType(1)} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+						<button onClick={getDailyWord} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
 							Try daily word
 						</button>
 					</div>
