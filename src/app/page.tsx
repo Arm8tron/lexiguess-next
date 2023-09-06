@@ -79,7 +79,7 @@ export default function Home() {
 
 	function getDailyWord() {
 		try {
-			fetch(`/api/daily-word`)
+			fetch(`/api/daily-word`, { cache: "no-cache" })
 				.then(res => res.json())
 				.then(response => {
 					if (response.word) {

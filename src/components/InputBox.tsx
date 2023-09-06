@@ -38,7 +38,7 @@ export default function InputBox(props: InputBoxProps) {
             className={
                 (feedback > 0 ? " " : letter ? "border-slate-500 border-2" : "border-slate-800 border-2") + " " +
                 (feedback == 2 ? "bg-custom-green" : feedback == 1 ? "bg-custom-yellow" : "bg-primary-bg") +
-                ' font-bold rounded-lg h-[50px] w-[50px]  text-[22px] text-center select-none uppercase flex items-center justify-center'}
+                ' font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'}
         >
             {letter}
         </div>
