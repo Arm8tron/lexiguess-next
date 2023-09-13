@@ -11,6 +11,8 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import Modal from '@mui/material/Modal';
 import Box from '@mui/material/Box';
 import { generateHardWord } from '../../hard-word-gen';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 /*	
 	Feedback
 	0 - Not present
@@ -51,9 +53,12 @@ const style = {
 };
 
 export default function Home() {
-	const regenBtnRef = useRef<HTMLButtonElement | null>(null);
+	const regenBtnRef = useRef<HTMLAnchorElement | null>(null);
 
-	const [wordType, setWordType] = useState<number>(0);
+    const searchParams = useSearchParams();
+    const wordType = searchParams.get('type');
+    const times = searchParams.get('times') ?? "0";
+
 	const [wordLength, setWordLength] = useState<number>(5);
 	const [numberOfAttempts, setNumberOfAttempts] = useState<number>(6);
 	const [generatedWord, setGeneratedWord] = useState<string>('');
@@ -64,9 +69,19 @@ export default function Home() {
 	const [wordMeaning, setWordMeaning] = useState<string>('');
 	const [isSettingsModalVisible, setSettingsModalVisibility] = useState<boolean>(false);
 
+    useEffect(() => {
+        if(wordType == "daily") {
+            getDailyWord();
+        } else if(wordType == "hard") {
+            getHardWord();
+        } else {
+            getNormalWord();
+        }
+    }, [wordType, times]);
+
 	useEffect(() => {
-		if(wordType == 0) {
-			generateNormalWord();
+		if(wordType == "normal") {
+			getNormalWord();
 		}
 	}, [wordLength]);
 
@@ -79,7 +94,7 @@ export default function Home() {
 
 	function getDailyWord() {
 		try {
-			fetch(`/api/daily-word`, { cache: "no-cache" })
+			fetch(`/api/daily-word`, { cache: "no-store" })
 				.then(res => res.json())
 				.then(response => {
 					if (response.word) {
@@ -91,7 +106,6 @@ export default function Home() {
 						setCompletedUserWords([]);
 						setActiveRow(0);
 						setShowAnswer(false);
-                        setWordType(1);
 					} else {
 						throw "Word not found";
 					}
@@ -103,15 +117,7 @@ export default function Home() {
 		}
 	}
 
-	function regenerateWord() {
-		if(wordType == 2) {
-			generateHardWord();
-		} else {
-			generateNormalWord();
-		}
-	}
-
-	function generateNormalWord() {
+	function getNormalWord() {
 		console.log("Generating normal word");
 		const newWord: any = generate({ minLength: wordLength, maxLength: wordLength });
 		setGeneratedWord(newWord);
@@ -120,7 +126,6 @@ export default function Home() {
 		setCompletedUserWords([]);
 		setActiveRow(0);
 		setShowAnswer(false);
-		setWordType(0);
 		regenBtnRef.current?.blur();
 	}
 
@@ -133,7 +138,6 @@ export default function Home() {
 		setCompletedUserWords([]);
 		setActiveRow(0);
 		setShowAnswer(false);
-		setWordType(2);
 		setSettingsModalVisibility(false);
 		getWordMeaning(newWord);
 	}
@@ -249,7 +253,9 @@ export default function Home() {
 	}
 
 	function handleChangeWordLength(event: any) {
-		setWordLength(event.target.value);
+        if(wordType != "daily" && wordType != "hard") {
+            setWordLength(event.target.value);
+        }
 	}
 
 	function handleChangeNumberOfAttempts(event: any) {
@@ -265,29 +271,29 @@ export default function Home() {
 			<header className='fixed top-0 left-0 border-b border-slate-700 w-full px-5 bg-primary-bg z-10 h-[75px] sm:h-[60px]'>
 				<div className='flex items-center justify-center sm:justify-between h-1/3 sm:h-full'>
 					<div className='w-1/3 sm:flex justify-start items-center hidden'>
-						<button onClick={getDailyWord} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+						<Link href={`?type=daily`} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
 							Try daily word
-						</button>
+						</Link>
 					</div>
 					<div className='flex flex-row gap-2 w-1/3 justify-center items-center'>
 						<h1 className='text-[32px] font-extrabold select-none'>LexiGuess</h1>
-						<p style={{ display: wordType == 1 ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Daily</p>
-						<p style={{ display: wordType == 2 ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Hard</p>
+						<p style={{ display: wordType == "daily" ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Daily</p>
+						<p style={{ display: wordType == "hard" ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Hard</p>
 					</div>
 					<div className='w-1/3 hidden sm:flex justify-end items-center'>
-						<button style={{ display: wordType != 1 ? "flex" : "none" }} onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+						<button onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
 							<SettingsIcon />
 						</button>
 					</div>
 				</div>
 				<div className='flex sm:hidden items-center justify-around h-1/3 my-4'>
 					<div className='w-1/3 flex justify-start items-center'>
-						<button onClick={getDailyWord} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+						<Link href={`?type=daily`} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
 							Try daily word
-						</button>
+						</Link>
 					</div>
 					<div className='w-1/3 flex justify-end items-center'>
-						<button style={{ display: wordType != 1 ? "flex" : "none" }} onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+						<button onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
 							<SettingsIcon />
 						</button>
 					</div>
@@ -319,9 +325,9 @@ export default function Home() {
 						</div>
 					)
 				}
-				<button ref={regenBtnRef} style={{ display: wordType != 1 ? "flex" : "none" }} onClick={regenerateWord} className=' px-4 py-2 bg-slate-800 hover:opacity-80 rounded-lg'>
+				<Link ref={regenBtnRef} href={`?type=${wordType == 'daily' || wordType != "hard" ? 'normal' : wordType}&times=${Number.isNaN((parseInt(times) + 1)) ? 1 : (parseInt(times) + 1)}`} className=' px-4 py-2 bg-slate-800 hover:opacity-80 rounded-lg'>
 					Regenerate
-				</button>
+				</Link>
 				<div className='flex flex-row gap-x-4'>
 					<button onClick={() => handleKey("enter")} className=' w-24 h-10 bg-slate-800 hover:opacity-80 rounded-lg'>
 						Enter
@@ -339,9 +345,12 @@ export default function Home() {
 				onClose={toggleSettingsOverlay}
 				open={isSettingsModalVisible}>
 				<Box sx={style}>
-					<button onClick={getHardWord} className='hover:bg-slate-800 rounded-lg p-2 duration-200 my-4'>
+					<Link style={{ display: wordType == "hard" ? "none" : "block" }} href={`?type=hard`} className='hover:bg-slate-800 rounded-lg p-2 duration-200 my-4'>
 						Hard mode (Words are hard to guess)
-					</button>
+					</Link>
+                    <Link style={{ display: wordType == "normal" ? "none" : "block" }} href={`?type=normal`} className='hover:bg-slate-800 rounded-lg p-2 duration-200 my-4'>
+						Normal mode
+					</Link>
 					<div className='flex flex-col w-full justify-center items-center gap-1'>
 						<p>Word length</p>
 						<Slider
