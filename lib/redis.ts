@@ -1,3 +1,5 @@
+"use server"
+
 import { createClient } from 'redis';
 import { generate } from 'random-words';
 

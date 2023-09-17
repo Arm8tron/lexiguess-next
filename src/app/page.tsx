@@ -13,6 +13,8 @@ import Box from '@mui/material/Box';
 import { generateHardWord } from '../../hard-word-gen';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { getDailyWord as dailyWord } from "@/lib/redis";
+
 /*	
 	Feedback
 	0 - Not present
@@ -24,7 +26,7 @@ import Link from 'next/link';
 	Type
 	0 - Normal
 	1 - Daily 
-    2 - Hard
+	2 - Hard
 
 */
 
@@ -55,9 +57,9 @@ const style = {
 export default function Home() {
 	const regenBtnRef = useRef<HTMLAnchorElement | null>(null);
 
-    const searchParams = useSearchParams();
-    const wordType = searchParams.get('type');
-    const times = searchParams.get('times') ?? "0";
+	const searchParams = useSearchParams();
+	const wordType = searchParams.get('type');
+	const times = searchParams.get('times') ?? "0";
 
 	const [wordLength, setWordLength] = useState<number>(5);
 	const [numberOfAttempts, setNumberOfAttempts] = useState<number>(6);
@@ -69,18 +71,18 @@ export default function Home() {
 	const [wordMeaning, setWordMeaning] = useState<string>('');
 	const [isSettingsModalVisible, setSettingsModalVisibility] = useState<boolean>(false);
 
-    useEffect(() => {
-        if(wordType == "daily") {
-            getDailyWord();
-        } else if(wordType == "hard") {
-            getHardWord();
-        } else {
-            getNormalWord();
-        }
-    }, [wordType, times]);
+	useEffect(() => {
+		if (wordType == "daily") {
+			getDailyWord();
+		} else if (wordType == "hard") {
+			getHardWord();
+		} else {
+			getNormalWord();
+		}
+	}, [wordType, times]);
 
 	useEffect(() => {
-		if(wordType == "normal") {
+		if (wordType == "normal") {
 			getNormalWord();
 		}
 	}, [wordLength]);
@@ -92,26 +94,22 @@ export default function Home() {
 		};
 	}, [activeUserWord]);
 
-	function getDailyWord() {
+	async function getDailyWord() {
 		try {
-			fetch(`/api/daily-word`, { cache: "no-store" })
-				.then(res => res.json())
-				.then(response => {
-					if (response.word) {
-						console.log("got daily word");
-						setGeneratedWord(response.word);
-						setWordLength(response.word.length);
-						setNumberOfAttempts(6);
-						setActiveUserWord('');
-						setCompletedUserWords([]);
-						setActiveRow(0);
-						setShowAnswer(false);
-					} else {
-						throw "Word not found";
-					}
-				}).catch(err => {
-					throw err;
-				})
+			const word: string | null = await dailyWord();
+
+			if (word) {
+				console.log("got daily word");
+				setGeneratedWord(word);
+				setWordLength(word.length);
+				setNumberOfAttempts(6);
+				setActiveUserWord('');
+				setCompletedUserWords([]);
+				setActiveRow(0);
+				setShowAnswer(false);
+			} else {
+				throw "Word not found";
+			}
 		} catch (error: any) {
 			showErrorToast(error.toString());
 		}
@@ -131,7 +129,7 @@ export default function Home() {
 
 	function getHardWord() {
 		console.log("Generating hard word");
-		const newWord : string = generateHardWord();
+		const newWord: string = generateHardWord();
 		setGeneratedWord(newWord);
 		setWordLength(newWord.length);
 		setActiveUserWord('');
@@ -253,9 +251,9 @@ export default function Home() {
 	}
 
 	function handleChangeWordLength(event: any) {
-        if(wordType != "daily" && wordType != "hard") {
-            setWordLength(event.target.value);
-        }
+		if (wordType != "daily" && wordType != "hard") {
+			setWordLength(event.target.value);
+		}
 	}
 
 	function handleChangeNumberOfAttempts(event: any) {
@@ -348,7 +346,7 @@ export default function Home() {
 					<Link style={{ display: wordType == "hard" ? "none" : "block" }} href={`?type=hard`} className='hover:bg-slate-800 rounded-lg p-2 duration-200 my-4'>
 						Hard mode (Words are hard to guess)
 					</Link>
-                    <Link style={{ display: wordType == "normal" ? "none" : "block" }} href={`?type=normal`} className='hover:bg-slate-800 rounded-lg p-2 duration-200 my-4'>
+					<Link style={{ display: wordType == "normal" ? "none" : "block" }} href={`?type=normal`} className='hover:bg-slate-800 rounded-lg p-2 duration-200 my-4'>
 						Normal mode
 					</Link>
 					<div className='flex flex-col w-full justify-center items-center gap-1'>
