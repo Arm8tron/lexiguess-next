@@ -23,7 +23,7 @@ import Link from 'next/link';
 
 const alphabeticRegex: RegExp = /^[A-Za-z]+$/;
 
-type CompletedUserWordType = {
+export type CompletedUserWordType = {
 	letter: string,
 	feedback: 0 | 1 | 2
 }
@@ -307,7 +307,7 @@ export default function Home() {
 						Backspace
 					</button>
 				</div>
-				<Keyboard onKeyClick={handleKey} />
+				<Keyboard completedUserWords={completedUserWords} onKeyClick={handleKey} />
 				<ToastContainer
 					position='bottom-left'
 				/>

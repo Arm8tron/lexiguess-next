@@ -16,7 +16,8 @@ const config: Config = {
       colors: {
         'primary-bg' : "#101010",
         'custom-green': "#3A6669",
-        'custom-yellow' : "#BCAB79"
+        'custom-yellow' : "#BCAB79",
+        'custom-red': "#7B6669"
       }
     },
   },

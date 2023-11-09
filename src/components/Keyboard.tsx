@@ -1,4 +1,5 @@
 import React from 'react';
+import { CompletedUserWordType } from '../app/page';
 
 const keyboardLayout = [
 	['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
@@ -7,10 +8,20 @@ const keyboardLayout = [
 ];
 
 type KeyboardProps = {
-    onKeyClick: Function
+    onKeyClick: Function,
+    completedUserWords: CompletedUserWordType[][]
 }
 
-export default function Keyboard({ onKeyClick } : KeyboardProps) {
+export default function Keyboard({ onKeyClick, completedUserWords } : KeyboardProps) {
+    
+    function feedback(key : string) {
+        const foundElementList = completedUserWords.find(el => el.find(e => e.letter == key));
+        const element = foundElementList?.find(el => el.letter == key);
+        if(element) {
+            return element.feedback;
+        } else return -1;
+    }
+
 	return (
 		<div className="flex flex-col gap-y-2 justify-center items-center">
 			{keyboardLayout.map((row, rowIndex) => (
@@ -18,7 +29,7 @@ export default function Keyboard({ onKeyClick } : KeyboardProps) {
 					{row.map((key, keyIndex) => (
 						<button
 							key={keyIndex}
-							className=" bg-slate-800 rounded-xl p-3 focus:border-slate-600 focus:border uppercase"
+							className={`${feedback(key) == 0 ? "bg-custom-red" : feedback(key) == -1 ? "bg-slate-800" : "bg-custom-yellow"}  rounded-xl p-3 focus:border-slate-600 focus:border uppercase`}
 							onClick={() => onKeyClick(key)}
 						>
 							{key}

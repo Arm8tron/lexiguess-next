@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react'
-
-type completedUserWord = {
-    letter: string,
-    feedback: 0 | 1 | 2
-}
+import { CompletedUserWordType } from '../app/page';
 
 type InputBoxProps = {
-    completedUserWords: completedUserWord[][],
+    completedUserWords: CompletedUserWordType[][],
     row: number,
     column: number,
     activeRow: number,
