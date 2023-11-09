@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 
 type completedUserWord = {
     letter: string,
-    feedback: number
+    feedback: 0 | 1 | 2
 }
 
 type InputBoxProps = {

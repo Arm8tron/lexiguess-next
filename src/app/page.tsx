@@ -13,7 +13,6 @@ import Box from '@mui/material/Box';
 import { generateHardWord } from '../../hard-word-gen';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { getDailyWord as dailyWord } from "@/lib/redis";
 
 /*	
 	Feedback
@@ -22,20 +21,14 @@ import { getDailyWord as dailyWord } from "@/lib/redis";
 	2 - present and correct location
 */
 
-/*
-	Type
-	0 - Normal
-	1 - Daily 
-	2 - Hard
-
-*/
-
 const alphabeticRegex: RegExp = /^[A-Za-z]+$/;
 
 type CompletedUserWordType = {
 	letter: string,
-	feedback: number
+	feedback: 0 | 1 | 2
 }
+
+type wordType = "normal" | "daily" | "hard";
 
 const style = {
 	position: 'absolute' as 'absolute',
@@ -58,7 +51,7 @@ export default function Home() {
 	const regenBtnRef = useRef<HTMLAnchorElement | null>(null);
 
 	const searchParams = useSearchParams();
-	const wordType = searchParams.get('type');
+	const wordType : wordType = searchParams.get('type') == "hard" ? "hard" : searchParams.get("type") == "daily" ? "daily" : "normal";
 	const times = searchParams.get('times') ?? "0";
 
 	const [wordLength, setWordLength] = useState<number>(5);
@@ -95,24 +88,16 @@ export default function Home() {
 	}, [activeUserWord]);
 
 	async function getDailyWord() {
-		try {
-			const word: string | null = await dailyWord();
-
-			if (word) {
-				console.log("got daily word");
-				setGeneratedWord(word);
-				setWordLength(word.length);
-				setNumberOfAttempts(6);
-				setActiveUserWord('');
-				setCompletedUserWords([]);
-				setActiveRow(0);
-				setShowAnswer(false);
-			} else {
-				throw "Word not found";
-			}
-		} catch (error: any) {
-			showErrorToast(error.toString());
-		}
+		const date = new Date();
+		const customSeed = `${date.getDate()}-${date.getMonth()}-${date.getFullYear()}`
+		const word: string = generate({ minLength: 5, maxLength: 5, seed: customSeed, exactly: 1 })[0];
+		setGeneratedWord(word);
+		setWordLength(word.length);
+		setNumberOfAttempts(6);
+		setActiveUserWord('');
+		setCompletedUserWords([]);
+		setActiveRow(0);
+		setShowAnswer(false);
 	}
 
 	function getNormalWord() {
@@ -267,30 +252,18 @@ export default function Home() {
 	return (
 		<div className='w-full h-full flex items-center justify-center flex-col gap-y-6'>
 			<header className='fixed top-0 left-0 border-b border-slate-700 w-full px-5 bg-primary-bg z-10 h-[75px] sm:h-[60px]'>
-				<div className='flex items-center justify-center sm:justify-between h-1/3 sm:h-full'>
-					<div className='w-1/3 sm:flex justify-start items-center hidden'>
+				<div className='flex items-center justify-between h-full flex-wrap w-full'>
+					<div className='flex justify-start items-center'>
 						<Link href={`?type=daily`} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
 							Try daily word
 						</Link>
 					</div>
-					<div className='flex flex-row gap-2 w-1/3 justify-center items-center'>
-						<h1 className='text-[32px] font-extrabold select-none'>LexiGuess</h1>
-						<p style={{ display: wordType == "daily" ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Daily</p>
+					<div className='flex flex-row gap-2 justify-center items-center relative'>
+						<h1 className='text-lg sm:text-3xl font-extrabold select-none'>LexiGuess</h1>
+						<p style={{ display: wordType == "daily" ? "flex" : "none" }} className='border absolute -right-10 -top-2 border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Daily</p>
 						<p style={{ display: wordType == "hard" ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Hard</p>
 					</div>
-					<div className='w-1/3 hidden sm:flex justify-end items-center'>
-						<button onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
-							<SettingsIcon />
-						</button>
-					</div>
-				</div>
-				<div className='flex sm:hidden items-center justify-around h-1/3 my-4'>
-					<div className='w-1/3 flex justify-start items-center'>
-						<Link href={`?type=daily`} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
-							Try daily word
-						</Link>
-					</div>
-					<div className='w-1/3 flex justify-end items-center'>
+					<div className='flex justify-end items-center'>
 						<button onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
 							<SettingsIcon />
 						</button>
@@ -299,7 +272,7 @@ export default function Home() {
 			</header>
 			<main className='mt-20 flex flex-col items-center justify-center gap-y-6'>
 				{Array.from({ length: numberOfAttempts }, (_, index) => index).map((row, rowIndex) => (
-					<div id={`Row ${row}`} className='flex flex-row gap-x-4' key={`row-${rowIndex}`}>
+					<div id={`row-${row}`} className='flex flex-row gap-x-4' key={`row-${rowIndex}`}>
 						{Array.from({ length: wordLength }, (_, index) => index).map((column, columnIndex) => (
 							<InputBox
 								key={`input-${rowIndex}-${columnIndex}`}
