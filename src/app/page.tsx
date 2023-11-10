@@ -8,6 +8,7 @@ import Slider from '@mui/material/Slider'
 import InputBox from '../components/InputBox';
 import Keyboard from '../components/Keyboard';
 import SettingsIcon from '@mui/icons-material/Settings';
+import InfoIcon from '@mui/icons-material/Info';
 import Modal from '@mui/material/Modal';
 import Box from '@mui/material/Box';
 import { generateHardWord } from '../../hard-word-gen';
@@ -44,7 +45,11 @@ const style = {
 	display: "flex",
 	flexDirection: "column",
 	justifyContent: "center",
-	alignItems: "center"
+	alignItems: "center",
+    '&:focus': {
+        outline: 'none',
+    },
+  
 };
 
 export default function Home() {
@@ -63,6 +68,14 @@ export default function Home() {
 	const [showAnswer, setShowAnswer] = useState<boolean>(false);
 	const [wordMeaning, setWordMeaning] = useState<string>('');
 	const [isSettingsModalVisible, setSettingsModalVisibility] = useState<boolean>(false);
+    const [isHelpModalVisible, setHelpModalVisibility] = useState<boolean>(false);
+
+    useEffect(() => {
+        const isHelpModalShown = localStorage.getItem('help-modal');
+        if(!isHelpModalShown) {
+            toggleHelpOverlay();
+        }
+    }, []);
 
 	useEffect(() => {
 		if (wordType == "daily") {
@@ -249,21 +262,30 @@ export default function Home() {
 		setSettingsModalVisibility(prevState => !prevState);
 	}
 
+
+    function toggleHelpOverlay() {
+        setHelpModalVisibility(prevState => !prevState);
+        localStorage.setItem('help-modal', JSON.stringify(true));
+    }
+
 	return (
 		<div className='w-full h-full flex items-center justify-center flex-col gap-y-6'>
 			<header className='fixed top-0 left-0 border-b border-slate-700 w-full px-5 bg-primary-bg z-10 h-[75px] sm:h-[60px]'>
 				<div className='flex items-center justify-between h-full flex-wrap w-full'>
-					<div className='flex justify-start items-center'>
+					<div className='w-1/3 flex justify-start items-center'>
 						<Link href={`?type=daily`} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
 							Try daily word
 						</Link>
 					</div>
-					<div className='flex flex-row gap-2 justify-center items-center relative'>
+					<div className='w-1/3 flex flex-row gap-2 justify-center items-center relative'>
 						<h1 className='text-lg sm:text-3xl font-extrabold select-none'>LexiGuess</h1>
 						<p style={{ display: wordType == "daily" ? "flex" : "none" }} className='border absolute -right-10 -top-2 border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Daily</p>
 						<p style={{ display: wordType == "hard" ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center'>Hard</p>
 					</div>
-					<div className='flex justify-end items-center'>
+					<div className='w-1/3 flex justify-end items-center'>
+                        <button onClick={toggleHelpOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+							<InfoIcon />
+						</button>
 						<button onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
 							<SettingsIcon />
 						</button>
@@ -354,6 +376,82 @@ export default function Home() {
 					</div>
 				</Box>
 			</Modal>
+            <Modal
+                onClose={toggleHelpOverlay}
+                open={isHelpModalVisible}
+            >
+                <Box sx={style}>
+                    <h1 className='font-bold text-2xl'>
+                        How to play
+                    </h1>
+                    <span className='text-sm text-center mt-5'>Guess the word in the your choice number of attempts</span>
+                    <span className='text-sm text-center'>The color of the tiles will change based on how close you are to the target word</span>
+                    <div className='mt-5'>
+                        <h3 className='font-medium text-xl'>Examples</h3>
+                        <div className='my-4'>
+                            <div className='flex flex-row gap-x-4 mb-2'>
+                                <div className=' bg-custom-green font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    A
+                                </div>
+                                <div className='border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    L
+                                </div>
+                                <div className='border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    I
+                                </div>
+                                <div className='border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    V
+                                </div>
+                                <div className='border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    E
+                                </div>
+                            </div>
+                            <span className='text-center'>A is in the word and in the correct spot</span>
+                        </div>
+                        <div className='my-4'>
+                            <div className='flex flex-row gap-x-4 mb-2'>
+                                <div className=' border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    S
+                                </div>
+                                <div className='border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    T
+                                </div>
+                                <div className='border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    A
+                                </div>
+                                <div className='bg-custom-yellow font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    T
+                                </div>
+                                <div className='border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    E
+                                </div>
+                            </div>
+                            <span className='text-center'>T is in the word but in the wrong spot</span>
+                        </div>
+                        <div className='my-4 w-full'>
+                            <div className='flex flex-row gap-x-4 mb-2'>
+                                <div className=' border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    V
+                                </div>
+                                <div className='border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    A
+                                </div>
+                                <div className='border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    G
+                                </div>
+                                <div className='border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    U
+                                </div>
+                                <div className='border-slate-800 border-2 font-bold rounded-lg w-12 h-12  text-[22px] text-center select-none uppercase flex items-center justify-center'>
+                                    E
+                                </div>
+                            </div>
+                            <span className='text-center'>None of the letters are in the word</span>
+                        </div>
+                    </div>
+
+                </Box>
+            </Modal>
 		</div>
 	)
 }
