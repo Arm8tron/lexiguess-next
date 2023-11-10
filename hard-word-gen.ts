@@ -90,7 +90,7 @@ const hardWordsArray = [
     "sinister", "simulate", "silt", "shun", "shoddy", "shimmer", "shirk",
     "sheer", "shackle", "shadowy", "shackle", "shabby", "sever", "sequester",
     "sentiment", "sensuous", "sensory", "sensible", "seminal", "seismic", "seethe",
-];
+].filter(word => word.length <= 10);
 
 export function generateHardWord() {
     const length : number = hardWordsArray.length;
