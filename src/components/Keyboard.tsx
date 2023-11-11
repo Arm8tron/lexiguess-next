@@ -1,5 +1,5 @@
 import React from 'react';
-import { CompletedUserWordType } from '../app/page';
+import { CompletedUserWordType } from '@/types/words';
 
 const keyboardLayout = [
 	['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],

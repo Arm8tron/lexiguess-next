@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { CompletedUserWordType } from '../app/page';
+import { CompletedUserWordType } from '@/types/words';
 
 type InputBoxProps = {
     completedUserWords: CompletedUserWordType[][],
