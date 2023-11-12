@@ -43,6 +43,7 @@ export default function Home({
 		streakData: Database['public']['Tables']['daily_streak']['Row'] | null
 	}) {
 	const regenBtnRef = useRef<HTMLAnchorElement | null>(null);
+	const dummyRef = useRef<any>(null);
 	const supabase = createClientComponentClient<Database>()
 
 	const searchParams = useSearchParams();
@@ -81,7 +82,7 @@ export default function Home({
 
 	useEffect(() => {
 		window.onkeydown = (event) => {
-			document.body.focus();
+			dummyRef.current?.focus();
 			if (isAuthModalVisible) return;
 			const key = event.key.toLowerCase();
 			handleKey(key);
@@ -368,7 +369,7 @@ export default function Home({
 						Regenerate
 					</Link>
 					<div className='flex flex-row gap-x-4'>
-						<button onClick={() => handleKey("enter")} className=' w-24 h-10 bg-slate-800 hover:opacity-80 rounded-lg'>
+						<button ref={dummyRef} onClick={() => handleKey("enter")} className=' w-24 h-10 bg-slate-800 hover:opacity-80 rounded-lg'>
 							Enter
 						</button>
 						<button onClick={() => handleKey("backspace")} className=' w-24 h-10 bg-slate-800 hover:opacity-80 rounded-lg'>
