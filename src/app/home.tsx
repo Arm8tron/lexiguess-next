@@ -273,7 +273,7 @@ export default function Home({
 
 
 		const { error } = await supabase.from('profiles').update({
-			completed_words: [...completedWords, `${activeUserWord}-${Date.now()}`]
+			completed_words: [...completedWords, `${activeUserWord}-${wordType}-${Date.now()}`]
 		}).eq('id', session?.user.id)
 
 		if (error) console.log(error);
