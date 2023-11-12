@@ -15,7 +15,10 @@ import Header from '@/components/Header';
 import AuthOverlay from '@/components/AuthOverlay';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Session } from '@supabase/auth-helpers-nextjs'
-import { wordType , CompletedUserWordType  } from '@/types/words'
+import { wordType, CompletedUserWordType } from '@/types/words'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { Database } from '@/types/supabase';
+import StatsOverlay from '@/components/StatsOverlay';
 
 /*	
 	Feedback
@@ -32,8 +35,15 @@ const darkTheme = createTheme({
 	},
 });
 
-export default function Home({ session }: { session: Session | null }) {
+export default function Home({
+	session, completedWords, streakData }:
+	{
+		session: Session | null,
+		completedWords: string[],
+		streakData: Database['public']['Tables']['daily_streak']['Row'] | null
+	}) {
 	const regenBtnRef = useRef<HTMLAnchorElement | null>(null);
+	const supabase = createClientComponentClient<Database>()
 
 	const searchParams = useSearchParams();
 	const wordType: wordType = searchParams.get('type') == "hard" ? "hard" : searchParams.get("type") == "daily" ? "daily" : "normal";
@@ -49,9 +59,8 @@ export default function Home({ session }: { session: Session | null }) {
 	const [wordMeaning, setWordMeaning] = useState<string>('');
 	const [isSettingsModalVisible, setSettingsModalVisibility] = useState<boolean>(false);
 	const [isHelpModalVisible, setHelpModalVisibility] = useState<boolean>(false);
-	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-	const isWordTypeMenuOpen = Boolean(anchorEl);
 	const [isAuthModalVisible, setAuthModalVisibility] = useState<boolean>(false);
+	const [isStatsModalVisible, setStatsModalVisibility] = useState<boolean>(false);
 
 	useEffect(() => {
 		const isHelpModalShown = localStorage.getItem('help-modal');
@@ -68,17 +77,12 @@ export default function Home({ session }: { session: Session | null }) {
 		} else {
 			getNormalWord();
 		}
-	}, [wordType, times]);
-
-	useEffect(() => {
-		if (wordType == "normal") {
-			getNormalWord();
-		}
-	}, [wordLength]);
+	}, [wordType, times, wordLength]);
 
 	useEffect(() => {
 		window.onkeydown = (event) => {
-			if(isAuthModalVisible) return;
+			document.body.focus();
+			if (isAuthModalVisible) return;
 			const key = event.key.toLowerCase();
 			handleKey(key);
 		};
@@ -192,6 +196,9 @@ export default function Home({ session }: { session: Session | null }) {
 
 		if (correctCount == wordLength) {
 			showSuccessToast("You got it right!");
+			updateDb();
+			incrementDailyStreak();
+
 		} else {
 			if (activeRow == numberOfAttempts - 1) {
 				showErrorToast("No more attempts left");
@@ -252,30 +259,84 @@ export default function Home({ session }: { session: Session | null }) {
 		localStorage.setItem('help-modal', JSON.stringify(true));
 	}
 
-	function handleOpenWordTypeMenu(event: React.MouseEvent<HTMLButtonElement>) {
-		setAnchorEl(event.currentTarget);
-	}
-
-	function handleCloseWordTypeMenu() {
-		setAnchorEl(null);
-	}
-
 	function toggleAuthOverlay() {
 		setAuthModalVisibility(prevState => !prevState);
 	}
+
+	function toggleStatsOverlay() {
+		setStatsModalVisibility(prevState => !prevState);
+	}
+
+	async function updateDb() {
+		const onlyWords = completedWords.map(item => item.split('-')[0]);
+		if (!session || onlyWords.includes(activeUserWord)) return;
+
+
+		const { error } = await supabase.from('profiles').update({
+			completed_words: [...completedWords, `${activeUserWord}-${Date.now()}`]
+		}).eq('id', session?.user.id)
+
+		if (error) console.log(error);
+
+		return;
+	}
+
+	async function incrementDailyStreak() {
+		const today = new Date();
+
+		if (!session || !streakData || wordType != "daily" || !streakData.start_date) return;
+
+		if(streakData.recent_date != null && streakData.recent_date == today.toISOString().split('T')[0]) {
+			showErrorToast("You already solved daily word");
+			return;
+		}
+
+		const newStreakData : typeof streakData = streakData;
+
+		if(streakData.recent_date == null) {
+			newStreakData.recent_date = today.toISOString().split('T')[0];
+			newStreakData.start_date = today.toISOString().split('T')[0];
+			newStreakData.current_streak = 1;
+			newStreakData.longest_streak = 1;
+		} else {
+			const recentDate = new Date(streakData.recent_date);
+			const timeDiff = Math.abs(today.valueOf() - recentDate.valueOf());
+			const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+			if(dayDiff > 1) {
+				newStreakData.recent_date = today.toISOString().split('T')[0];
+				newStreakData.start_date = today.toISOString().split('T')[0];
+				newStreakData.current_streak = 1;
+				newStreakData.longest_streak = 1;
+			} else {
+				newStreakData.recent_date = today.toISOString().split('T')[0];
+				newStreakData.current_streak = streakData.current_streak ? streakData.current_streak + 1 : 1;
+				newStreakData.longest_streak = Math.max(newStreakData.current_streak, newStreakData.longest_streak ?? 0);
+			}
+
+		}
+
+		const { error } = await supabase
+			.from('daily_streak')
+			.update(newStreakData)
+			.eq('user_id', session?.user.id)
+
+		if(error) console.error(error);
+
+		return;
+	}
+
 
 	return (
 		<ThemeProvider theme={darkTheme}>
 			<div className='w-full h-full flex items-center justify-center flex-col gap-y-6'>
 				<Header
-					isWordTypeMenuOpen={isWordTypeMenuOpen}
-					handleOpenWordTypeMenu={handleOpenWordTypeMenu}
-					anchorEl={anchorEl}
-					handleCloseWordTypeMenu={handleCloseWordTypeMenu}
 					wordType={wordType}
 					toggleHelpOverlay={toggleHelpOverlay}
 					toggleSettingsOverlay={toggleSettingsOverlay}
 					toggleAuthOverlay={toggleAuthOverlay}
+					toggleStatsOverlay={toggleStatsOverlay}
+					email={session?.user.email}
+					streakData={streakData}
 				/>
 				<main className='mt-20 flex flex-col items-center justify-center gap-y-6'>
 					{Array.from({ length: numberOfAttempts }, (_, index) => index).map((row, rowIndex) => (
@@ -328,7 +389,8 @@ export default function Home({ session }: { session: Session | null }) {
 					handleChangeNumberOfAttempts={handleChangeNumberOfAttempts}
 				/>
 				<HelpOverlay toggleHelpOverlay={toggleHelpOverlay} isHelpModalVisible={isHelpModalVisible} />
-				<AuthOverlay toggleAuthOverlay={toggleAuthOverlay} isAuthModalVisible={isAuthModalVisible}/>
+				<AuthOverlay toggleAuthOverlay={toggleAuthOverlay} isAuthModalVisible={isAuthModalVisible} showSuccessToast={showSuccessToast} showErrorToast={showErrorToast} />
+				<StatsOverlay toggleStatsOverlay={toggleStatsOverlay} isStatsModalVisible={isStatsModalVisible} completedWords={completedWords} />
 			</div>
 		</ThemeProvider>
 	)
