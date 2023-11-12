@@ -82,8 +82,8 @@ export default function Home({
 
 	useEffect(() => {
 		window.onkeydown = (event) => {
-			dummyRef.current?.focus();
 			if (isAuthModalVisible) return;
+			dummyRef.current?.focus();
 			const key = event.key.toLowerCase();
 			handleKey(key);
 		};
