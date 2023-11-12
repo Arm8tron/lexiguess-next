@@ -62,9 +62,22 @@ export default function Header({
 
 
 	return (
-		<header className='fixed top-0 left-0 border-b border-slate-700 w-full px-5 bg-primary-bg z-10 sm:h-[60px] h-[75px]'>
-			<div className='flex items-center justify-between h-full flex-wrap w-full'>
-				<div className='sm:w-1/3 flex justify-start items-center'>
+		<header className='fixed top-0 left-0 border-b border-slate-700 w-full bg-primary-bg z-10 sm:h-[60px] h-[85px]'>
+			<div className='flex flex-col sm:flex-row gap-2 sm:gap-0  items-center justify-center sm:justify-between h-full w-full'>
+				<div className="hidden sm:block sm:w-1/3">
+
+				</div>
+				<div className='w-full sm:w-1/3 flex flex-row gap-2 justify-center items-center'>
+					<h1 className='text-lg sm:text-3xl font-extrabold select-none'>LexiGuess</h1>
+					<p style={{ display: wordType == "hard" || wordType == "daily" ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center capitalize'>{wordType}</p>
+				</div>
+				<div className='sm:w-1/3 flex justify-end items-center gap-2'>
+					<button onClick={toggleHelpOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+						<Info />
+					</button>
+					<button onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
+						<Settings />
+					</button>
 					<Button
 						id="modes-button"
 						aria-controls={isWordTypeMenuOpen ? 'modes-menu' : undefined}
@@ -96,12 +109,7 @@ export default function Header({
 							Normal mode
 						</Link></MenuItem>
 					</Menu>
-				</div>
-				<div className='sm:w-1/3 flex flex-row gap-2 justify-center items-center relative'>
-					<h1 className='text-lg sm:text-3xl font-extrabold select-none'>LexiGuess</h1>
-					<p style={{ display: wordType == "hard" || wordType == "daily" ? "flex" : "none" }} className='border border-slate-300 rounded-lg px-2 py-1 text-[10px] h-[30px] flex justify-center items-center capitalize'>{wordType}</p>
-				</div>
-				<div className='sm:w-1/3 flex justify-end items-center gap-2'>
+
 					<button style={{ display: email ? "flex" : "none" }} onClick={toggleStatsOverlay} className={(isDailyWordSolved ? 'bg-[#8F0200] hover:bg-[#B80300]' : 'hover:bg-slate-800') + '  rounded-lg p-2 duration-200 gap-1'}>
 						{
 							isDailyWordSolved ?
@@ -111,12 +119,6 @@ export default function Header({
 								<>{streakData?.current_streak}
 									<Whatshot /></>
 						}
-					</button>
-					<button onClick={toggleHelpOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
-						<Info />
-					</button>
-					<button onClick={toggleSettingsOverlay} className='hover:bg-slate-800 rounded-lg p-2 duration-200'>
-						<Settings />
 					</button>
 					<button
 						style={{ display: email ? "flex" : "none" }}

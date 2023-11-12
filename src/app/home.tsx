@@ -338,7 +338,7 @@ export default function Home({
 					email={session?.user.email}
 					streakData={streakData}
 				/>
-				<main className='mt-20 flex flex-col items-center justify-center gap-y-6'>
+				<main className='mt-28 flex flex-col items-center justify-center gap-y-6'>
 					{Array.from({ length: numberOfAttempts }, (_, index) => index).map((row, rowIndex) => (
 						<div id={`row-${row}`} className='flex flex-row gap-x-4' key={`row-${rowIndex}`}>
 							{Array.from({ length: wordLength }, (_, index) => index).map((column, columnIndex) => (
