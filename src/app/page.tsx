@@ -17,6 +17,16 @@ export default async function Page() {
 		  console.error('Error fetching daily streak:', error.message);
 		  return null;
 		}
+
+		if(data.recent_date != null) {
+			const recentDate = new Date(data.recent_date);
+			const today = new Date();
+			const timeDiff = Math.abs(today.valueOf() - recentDate.valueOf());
+			const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+			if(dayDiff > 1) {
+				data.current_streak = 0;
+			}
+		}
 	  
 		return data;
 	  }

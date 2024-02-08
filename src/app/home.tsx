@@ -307,7 +307,6 @@ export default function Home({
 				newStreakData.recent_date = today.toISOString().split('T')[0];
 				newStreakData.start_date = today.toISOString().split('T')[0];
 				newStreakData.current_streak = 1;
-				newStreakData.longest_streak = 1;
 			} else {
 				newStreakData.recent_date = today.toISOString().split('T')[0];
 				newStreakData.current_streak = streakData.current_streak ? streakData.current_streak + 1 : 1;
